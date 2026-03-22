@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mediator007/gitSercher/cmd"
 	"github.com/spf13/cobra"
 )
 
@@ -38,13 +39,13 @@ var branchPattern string // паттерн веток для поиска
 // -------------------- Main --------------------
 
 func main() {
-	start := time.Now()
 	var rootCmd = &cobra.Command{
 		Use:   "gitSrch [searchString] [path]",
 		Short: "gitSrch helper",
 		Long:  "CLI to search for a string in all branches of Git repositories",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			start := time.Now()
 			searchString := args[0] // Строка поиска
 			dir := "."              // Директория по умолчанию
 			if len(args) > 1 {
@@ -73,6 +74,8 @@ func main() {
 			}
 
 			fmt.Printf("\nSearch finished. Total matches: %d\n", len(results))
+			duration := time.Since(start)
+			fmt.Printf("\nSearch finished in %s\n", duration)
 		},
 	}
 
@@ -80,13 +83,12 @@ func main() {
 	rootCmd.PersistentFlags().IntVar(&maxWorkers, "max-workers", 10, "Maximum number of parallel searches")
 	rootCmd.PersistentFlags().BoolVar(&spinner, "spinner", false, "Show spinner while searching")
 	rootCmd.PersistentFlags().StringVar(&branchPattern, "branch-pattern", "", "Regexp pattern to filter branches (e.g. 'main|develop|feature/')")
+	rootCmd.AddCommand(cmd.RecommendCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	duration := time.Since(start)
-	fmt.Printf("\nSearch finished in %s\n", duration)
 }
 
 // -------------------- Функции --------------------

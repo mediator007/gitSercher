@@ -1,6 +1,7 @@
 # gitSrch
 
 gitSrch - CLI-инструмент на Go для поиска строки во всех ветках Git-репозиториев.
+Полезен если поиск происходит по большому количеству git репозиториев с большим количеством веток
 
 Подходит для случаев, когда нужно найти:
 
@@ -24,14 +25,19 @@ export PATH="$HOME/bin:$PATH"
 ```
 
 ## Использование
+Рекомендации по количеству workers
+```sh
+gitSrch recommend-workers
+```
+
 ```sh
 gitSrch "search_string" [path] [flags]
 ```
 
-Поиск в текущей директории
+Поиск в директории по всем git repos находящимся в нём
 ```sh
 ./gitSrch "artifactoryUpload" \
-    ~/some-dir \
+    ~/some-dir-with-git-repos \
     --max-workers 20 \
     --spinner \
     --branch-pattern "master|^rel/.*"
