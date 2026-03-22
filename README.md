@@ -30,6 +30,7 @@ export PATH="$HOME/bin:$PATH"
 gitSrch recommend-workers
 ```
 
+Поиск
 ```sh
 gitSrch "search_string" [path] [flags]
 ```
