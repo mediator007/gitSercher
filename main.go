@@ -35,6 +35,7 @@ type SearchResult struct {
 var maxWorkers int       // Максимальное количество горутин
 var spinner bool         // Показывать крутилку
 var branchPattern string // паттерн веток для поиска
+var searchDirs []string  // новые директории через флаг
 
 // -------------------- Main --------------------
 
@@ -47,26 +48,58 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 			start := time.Now()
 			searchString := args[0] // Строка поиска
-			dir := "."              // Директория по умолчанию
+			rootDir := "."          // Директория по умолчанию
 			if len(args) > 1 {
-				dir = args[1]
+				rootDir = args[1]
 			}
 
-			// Находим git-репозитории первого уровня
-			repos, err := findGitReposNonRecursive(dir)
-			if err != nil {
-				fmt.Println("Error finding git repos:", err)
-				return
+			var dirsToScan []string
+
+			if len(searchDirs) > 0 {
+				// Если указаны поддиректории через --dirs, добавляем их к rootDir
+				for _, d := range searchDirs {
+					dirsToScan = append(dirsToScan, fmt.Sprintf("%s/%s", rootDir, d))
+				}
+			} else {
+				// Иначе сканируем все поддиректории первого уровня
+				entries, err := os.ReadDir(rootDir)
+				if err != nil {
+					fmt.Println("Error reading directory:", err)
+					return
+				}
+				for _, e := range entries {
+					if e.IsDir() {
+						dirsToScan = append(dirsToScan, fmt.Sprintf("%s/%s", rootDir, e.Name()))
+					}
+				}
 			}
-			if len(repos) == 0 {
-				fmt.Println("No git repositories found in", dir)
+
+			// Находим git-репозитории в dirsToScan
+			var allRepos []string
+			for _, dir := range dirsToScan {
+				// Если сама директория - git репо, добавляем
+				if _, err := os.Stat(dir + "/.git"); err == nil {
+					allRepos = append(allRepos, dir)
+					continue
+				}
+
+				repos, err := findGitReposNonRecursive(dir)
+				if err != nil {
+					fmt.Println("Error scanning", dir, ":", err)
+					continue
+				}
+				allRepos = append(allRepos, repos...)
+			}
+
+			if len(allRepos) == 0 {
+				fmt.Println("No git repositories found in specified directories")
 				return
 			}
 
-			fmt.Printf("Found %d git repositories. Searching...\n", len(repos))
+			fmt.Printf("Found %d git repositories. Searching...\n", len(allRepos))
 
 			// Выполняем поиск через пул горутин
-			results := searchReposWithPool(repos, maxWorkers, searchString)
+			results := searchReposWithPool(allRepos, maxWorkers, searchString)
 
 			// Выводим результаты
 			for _, r := range results {
@@ -83,6 +116,7 @@ func main() {
 	rootCmd.PersistentFlags().IntVar(&maxWorkers, "max-workers", 10, "Maximum number of parallel searches")
 	rootCmd.PersistentFlags().BoolVar(&spinner, "spinner", false, "Show spinner while searching")
 	rootCmd.PersistentFlags().StringVar(&branchPattern, "branch-pattern", "", "Regexp pattern to filter branches (e.g. 'main|develop|feature/')")
+	rootCmd.PersistentFlags().StringSliceVar(&searchDirs, "dirs", []string{"."}, "Comma-separated list of directories to search for git repositories")
 	rootCmd.AddCommand(cmd.RecommendCmd)
 
 	if err := rootCmd.Execute(); err != nil {

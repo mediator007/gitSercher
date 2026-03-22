@@ -37,8 +37,18 @@ gitSrch "search_string" [path] [flags]
 
 Поиск в директории по всем git repos находящимся в нём
 ```sh
-./gitSrch "artifactoryUpload" \
+gitSrch "TODO TASK-777" \
     ~/some-dir-with-git-repos \
+    --max-workers 20 \
+    --spinner \
+    --branch-pattern "master|^rel/.*"
+```
+
+Поиск в указанных поддиректориях внутри корня
+```sh
+gitSrch "TODO TASK-777" \
+    ~/some-dir-with-git-repos \
+    --dirs git-repo-1,git-repo-2 \
     --max-workers 20 \
     --spinner \
     --branch-pattern "master|^rel/.*"
@@ -49,3 +59,4 @@ gitSrch "search_string" [path] [flags]
 | `--max-workers`    | Максимальное количество параллельных задач | 10           |
 | `--spinner`        | Показывать крутилку                        | false        |
 | `--branch-pattern` | Regex для фильтрации веток                 | ""           |
+| `--dirs`           | Список поддиректорий внутри указанного корня, которые искать | Все поддиректории первого уровня |
